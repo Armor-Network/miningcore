@@ -23,16 +23,16 @@
 
 Commercial support directly by the maintainer is available through [miningcore.pro](https://store.miningcore.pro).
 
-For general questions visit the [Discussions Area](https://github.com/blackmennewstyle/miningcore/discussions).
+For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
 ## Contributions
 
-Code contributions are very welcome and should be submitted as standard [pull requests](https://docs.github.com/en/pull-requests) (PR) based on the [`dev` branch](https://github.com/blackmennewstyle/miningcore/tree/dev).
+Code contributions are very welcome and should be submitted as standard [pull requests](https://docs.github.com/en/pull-requests) (PR) based on the [`dev` branch](https://github.com/oliverw/miningcore/tree/dev).
 
 ## Building on Debian/Ubuntu
 
 ```console
-git clone https://github.com/blackmennewstyle/miningcore
+git clone https://github.com/oliverw/miningcore
 cd miningcore
 ```
 
@@ -55,7 +55,7 @@ or
 Download and install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 ```dosbatch
-git clone https://github.com/blackmennewstyle/miningcore
+git clone https://github.com/oliverw/miningcore
 cd miningcore
 build-windows.bat
 ```
@@ -69,7 +69,7 @@ build-windows.bat
 In case you don't want to install any dependencies then you can build the app using the official Microsoft .NET SDK Docker image.
 
 ```console
-git clone https://github.com/blackmennewstyle/miningcore
+git clone https://github.com/oliverw/miningcore
 cd miningcore
 ```
 Then build using Docker:
@@ -125,13 +125,28 @@ docker system prune -af
 
 ### Production OS
 
-Windows is **not** a supported production environment. Only Linux is. Please do not file issues related to running a pool on Windows. Windows topics should be posted under [discussions](https://github.com/blackmennewstyle/miningcore/discussions).
+Windows is **not** a supported production environment. Only Linux is. Please do not file issues related to running a pool on Windows. Windows topics should be posted under [discussions](https://github.com/oliverw/miningcore/discussions).
 
 Running and developing Miningcore on Windows is of course supported.
 
 ### Database setup
 
 Miningcore currently requires PostgreSQL 10 or higher.
+
+```console
+# Create the file repository configuration:
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+# Import the repository signing key:
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# Update the package lists:
+sudo apt-get update
+
+# Install the latest version of PostgreSQL.
+# If you want a specific version, use 'postgresql-14' or similar instead of 'postgresql':
+sudo apt-get -y install postgresql-14
+```
 
 Run Postgres's `psql` tool:
 
@@ -168,6 +183,11 @@ After executing the command, your `shares` table is now a [list-partitioned tabl
 
 The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of `mypool1` in the statement below with the id of your pool from your Miningcore configuration file:
 
+```console
+sudo -u postgres -i
+psql -d miningcore
+```
+
 ```sql
 CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 ```
@@ -182,12 +202,12 @@ Create a configuration file `config.json` as described [here](https://github.com
 
 ```console
 cd build
-Miningcore -c config.json
+dotnet Miningcore.dll -c config.json
 ```
 
 ## Supported Currencies
 
-Refer to [this file](https://github.com/blackmennewstyle/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 ## Caveats
 
@@ -213,22 +233,63 @@ Refer to [this file](https://github.com/blackmennewstyle/miningcore/blob/master/
 
 Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/oliverw/miningcore/wiki/API
 
+### Serving API using nginx
+
+Create an upstream for API:
+
+    upstream api {
+        server 127.0.0.1:4000;
+    }
+
+and add this setting after <code>location /</code>:
+
+    location /api {
+        proxy_pass http://api;
+    }
+
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
 
 Once again, do not run a production pool on Windows! This is not a supported configuration.
 
+## Share Relay note
+
+Miningcore supports running multiple pool stratums in different regions. Payments and API can be served by a single instance (master). Additional pools (relays) can be connected with ShareRelay.
+
+* Relay node
+```
+"shareRelay": {
+  "publishUrl": "tcp://0.0.0.0:6000",
+  "sharedEncryptionKey": "foobar"
+}
+```
+
+* Master
+```
+"shareRelays": [{
+    "url": "tcp://relay1:6000",
+    "sharedEncryptionKey": "foobar"
+}],
+```
+
+**More Info**
+https://github.com/oliverw/miningcore/blob/master/src/Miningcore/Configuration/ClusterConfig.cs#L586
+https://github.com/oliverw/miningcore/blob/master/src/Miningcore/Configuration/ClusterConfig.cs#L595
+https://github.com/oliverw/miningcore/blob/master/src/Miningcore/Configuration/ClusterConfig.cs#L605
+https://github.com/oliverw/miningcore/issues/409#issuecomment-426335307
+
 ## Donations
 
-To support this project you can become a [sponsor]( https://github.com/sponsors//blackmennewstyle ) or send a donation to the following accounts:
+To support this project you can become a [sponsor](https://github.com/sponsors/oliverw) or send a donation to the following accounts:
 
-* ETH:  `0xbC059e88A4dD11c2E882Fc6B83F8Ec12E4CCCFad`
-* BTC:  `16xvkGfG9nrJSKKo5nGWphP8w4hr2ZzVuw`
-* LTC:  `LLs76baYT7iMqQhizxtBC96Cy48iX3Eh1p`
-* DOGE: `DFuvDSFh4N3SiXGDnye2Vbc8kqvMHbyQE1`
-* KAS:  `kaspa:qpmf0wyu7c5z4l82ax9cfc5ughwk2f9lgu8uckkqrrpjqkxuk7yrga5nntvgn`
-* CCX:  `ccx7S4B3gBeH1SGWCfqZp3NM7Vavg7H3S8ovJn8fU4bwC4vU7ChWfHtbNzifhrpbJ74bMDxj4KZFTcznTfsucCEg1Kgv7zbNgs`
-* FIRO: `a5AsoTSkfPHQ3SUmR6binG1XW7oQQoFNU1`
-* ERGO: `9gYyuZzaSw3TiCtUkSRuS3XVDUv41EFs3dtNCFGqiEwHqpb7gkF`
-* XMR:  `483zaHtMRfM7rw1dXgebhWaRR8QLgAF6w4BomAV319FVVHfdbYTLVuBRc4pQgRAnRpfy6CXvvwngK4Lo3mRKE29RRx3Jb5c`
+* ETH:  `miningcore.eth (ENS Address)`
+* BTC:  `miningcore.eth (ENS Address)`
+* LTC:  `miningcore.eth (ENS Address)`
+* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
+* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
+* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
+* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
+* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
+* ERGO: `9foYU8JkoqWBSDA3ba8VHfduPXV2NaVNPPAFkdYoR9t9cPQGMv4`
+* XMR:  `46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46`
