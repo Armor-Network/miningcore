@@ -21,7 +21,7 @@ public class BlockRepository : IBlockRepository
 
         const string query =
             @"INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata,
-                miner, reward, effort, confirmationprogress, source, hash, created)
+                miner, reward, effort, minereffort, confirmationprogress, source, hash, created)
             VALUES(@poolid, @blockheight, @networkdifficulty, @status, @type, @transactionconfirmationdata,
                 @miner, @reward, @effort, @confirmationprogress, @source, @hash, @created)";
 
@@ -39,7 +39,7 @@ public class BlockRepository : IBlockRepository
         var mapped = mapper.Map<Entities.Block>(block);
 
         const string query = @"UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type,
-            reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";
+            reward = @reward, effort = @effort, minereffort = @minereffort, confirmationprogress = @confirmationprogress, hash = @hash WHERE id = @id";
 
         await con.ExecuteAsync(query, mapped, tx);
     }
