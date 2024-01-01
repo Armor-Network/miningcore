@@ -150,6 +150,12 @@ public class BlockRepository : IBlockRepository
 
         return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });
     }
+
+    public Task<DateTime?> GetLastMinerBlockTimeAsync(IDbConnection con, string poolId, string address)
+    {
+        const string query = @"SELECT created FROM blocks WHERE poolid = @poolId AND miner = @address ORDER BY created DESC LIMIT 1";
+        return con.ExecuteScalarAsync<DateTime?>(query, new { poolId, address });
+    }
     
     public async Task<Block> GetBlockByPoolHeightAndTypeAsync(IDbConnection con, string poolId, long height, string type)
     {
