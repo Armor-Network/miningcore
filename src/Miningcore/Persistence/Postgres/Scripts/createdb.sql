@@ -34,11 +34,12 @@ CREATE TABLE blocks
 	reward decimal(28,12) NULL,
     source TEXT NULL,
     hash TEXT NULL,
-	created TIMESTAMPTZ NOT NULL
+	created TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT BLOCKS_POOL_HEIGHT UNIQUE (poolid, blockheight, type) DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status);
-CREATE INDEX IDX_BLOCKS_POOL_BLOCK_TYPE on blocks(poolid, blockheight, type);
 
 CREATE TABLE balances
 (
